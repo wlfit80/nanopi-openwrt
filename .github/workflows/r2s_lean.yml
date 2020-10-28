@@ -1,4 +1,4 @@
-name: r2s Lean版openwrt
+name: r2s Lean版openwrtfeifei
 
 on:
   push:
@@ -7,6 +7,10 @@ on:
       - '.github/workflows/r2s_lean.yml'
   schedule:
     - cron: '10 09 * * *'
+#环境变量：SSH_ACTIONS设置为true则会在执行完Costom Configure File后显示一个SSH的链接，可用终端或者web登录到vps进行配置
+env:
+  SSH_ACTIONS: false
+  TZ: Asia/Shanghai
 
 jobs:
 
@@ -56,11 +60,20 @@ jobs:
           . ../../5_mods.sh
           mv ../../scripts/check_wan4.sh package/base-files/files/usr/bin && sed -i '/exit/i\/bin/sh /usr/bin/check_wan4.sh &' package/base-files/files/etc/rc.local
           mv ../../scripts/autoupdate.sh package/base-files/files/root/au.sh && chmod +x package/base-files/files/root/au.sh
+          
 
       - name: Build FriendlyWrt
-        run: . 4_build_image.sh friendlywrt-rk3328 nanopi_r2s.mk
+        run: . 4_build_image.sh friendlywrt-rk3328 
+      #如果环境变量设置为true,执行到此步骤时会弹出几行信息，上面有ssh的命令和https的链接，可选择在终端通过ssh链接修改配置或者通过web连接修改
+      - name: SSH connection to Actions
+        uses: P3TERX/debugger-action@master
+        if: env.SSH_ACTIONS == 'true'  
+      - name: Build image  
+        run: |
+          cd  friendlywrt-rk3328
+          ./build.sh nanopi_r2s.mk
 
-      - name: Assemble Artifact
+      - name: Assemble Artifact./build.sh
         id: assemble_artifact
         run: |
           . x_assemble_artifact.sh
